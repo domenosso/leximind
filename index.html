@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LexiMind — ИИ Юрист | Возврат денег и претензии</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+
+    <style>
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: #f1f5f9;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 28px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+        }
+        .btn-primary {
+            background: linear-gradient(90deg, #3b82f6 0%, #2563eb 100%);
+            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .btn-primary:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 12px 25px rgba(37, 99, 235, 0.5);
+        }
+        .btn-primary:active { transform: translateY(0); }
+
+        .gradient-text {
+            background: linear-gradient(90deg, #60a5fa, #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Кастомный скроллбар для текста претензии */
+        #result-area::-webkit-scrollbar { width: 6px; }
+        #result-area::-webkit-scrollbar-track { background: transparent; }
+        #result-area::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+
+        .loading-dots:after {
+            content: '.';
+            animation: dots 1.5s steps(5, end) infinite;
+        }
+        @keyframes dots {
+            0%, 20% { content: '.'; }
+            40% { content: '..'; }
+            60% { content: '...'; }
+            80%, 100% { content: ''; }
+        }
+    </style>
+</head>
+<body class="p-4 md:p-10">
+
+    <header class="max-w-4xl mx-auto text-center mb-16 animate__animated animate__fadeIn">
+        <div class="flex justify-center items-center mb-6">
+            <div class="p-3 bg-blue-500/10 rounded-2xl mr-4">
+                <span class="material-icons text-blue-500 text-5xl">gavel</span>
+            </div>
+            <h1 class="text-5xl font-black tracking-tighter">Lexi<span class="gradient-text">Mind</span></h1>
+        </div>
+        <p class="text-gray-400 text-xl max-w-2xl mx-auto leading-relaxed">
+            Ваш персональный цифровой адвокат. Составляем досудебные претензии на базе нейросетей последнего поколения.
+        </p>
+    </header>
+
+    <main class="max-w-3xl mx-auto relative">
+        <div class="absolute -top-20 -left-20 w-64 h-64 bg-blue-600/10 rounded-full blur-3xl"></div>
+        <div class="absolute -bottom-20 -right-20 w-64 h-64 bg-purple-600/10 rounded-full blur-3xl"></div>
+
+        <div class="glass-card p-8 mb-10 relative z-10 animate__animated animate__fadeInUp">
+            <div class="flex items-center mb-6">
+                <div class="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center mr-4">
+                    <span class="material-icons text-blue-400 text-sm">psychology</span>
+                </div>
+                <h2 class="text-2xl font-semibold">Опишите ситуацию</h2>
+            </div>
+            
+            <textarea id="user-issue" 
+                class="w-full bg-slate-900/50 border border-slate-700 rounded-2xl p-5 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all text-lg resize-none"
+                rows="6" 
+                placeholder="Пример: Заказал кроссовки на Ozon, пришли другого размера. В возврате отказали, хотя 14 дней не прошло..."></textarea>
+            
+            <div class="flex flex-col md:flex-row items-center gap-4 mt-8">
+                <button onclick="generateClaim()" id="submit-btn" class="btn-primary w-full py-5 rounded-2xl font-bold text-lg flex items-center justify-center space-x-3">
+                    <span class="material-icons">bolt</span>
+                    <span>Составить претензию за 290₽</span>
+                </button>
+            </div>
+            <p class="text-center text-gray-500 text-xs mt-4">Нажимая кнопку, ИИ проанализирует законы РФ (ЗоЗПП, ГК РФ)</p>
+        </div>
+
+        <div id="loader" class="hidden flex flex-col items-center py-12 animate__animated animate__fadeIn">
+            <div class="relative w-20 h-20 mb-6">
+                <div class="absolute inset-0 border-4 border-blue-500/20 rounded-full"></div>
+                <div class="absolute inset-0 border-4 border-t-blue-500 rounded-full animate-spin"></div>
+            </div>
+            <p class="text-xl font-light text-blue-400 italic loading-dots">Изучаю законодательную базу</p>
+        </div>
+
+        <div id="result-container" class="hidden animate__animated animate__zoomIn relative z-10">
+            <div class="glass-card p-8 border-green-500/20">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+                    <div class="flex items-center text-green-400">
+                        <span class="material-icons-outlined mr-2">verified</span>
+                        <h2 class="text-2xl font-semibold">Документ готов</h2>
+                    </div>
+                    <button onclick="copyText()" class="flex items-center bg-slate-800 hover:bg-slate-700 px-5 py-2 rounded-xl transition-colors text-sm border border-slate-700">
+                        <span class="material-icons text-sm mr-2">content_copy</span> Копировать текст
+                    </button>
+                </div>
+                <div id="result-area" class="bg-black/30 p-8 rounded-2xl border border-slate-800 text-gray-300 leading-relaxed overflow-y-auto max-h-[500px] shadow-inner text-base">
+                    </div>
+                <div class="mt-8 p-4 bg-yellow-500/5 border border-yellow-500/10 rounded-xl flex items-start">
+                    <span class="material-icons text-yellow-500/70 mr-3 text-sm">info</span>
+                    <p class="text-xs text-gray-400 leading-relaxed">
+                        Рекомендация: Распечатайте этот текст, подставьте свои ФИО и адрес, и отправьте заказным письмом или через форму обратной связи на сайте организации.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="max-w-5xl mx-auto mt-24 pb-12 border-t border-slate-800 pt-12 text-center">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-8 opacity-60">
+            <div>
+                <h3 class="text-3xl font-bold text-white mb-1">100%</h3>
+                <p class="text-xs uppercase tracking-widest text-gray-500">Законно</p>
+            </div>
+            <div>
+                <h3 class="text-3xl font-bold text-white mb-1">~2 мин</h3>
+                <p class="text-xs uppercase tracking-widest text-gray-500">Скорость</p>
+            </div>
+            <div>
+                <h3 class="text-3xl font-bold text-white mb-1">24/7</h3>
+                <p class="text-xs uppercase tracking-widest text-gray-500">Доступность</p>
+            </div>
+            <div>
+                <h3 class="text-3xl font-bold text-white mb-1">GPT-5</h3>
+                <p class="text-xs uppercase tracking-widest text-gray-500">Технологии</p>
+            </div>
+        </div>
+        <p class="mt-16 text-gray-600 text-xs tracking-widest uppercase">© 2026 LexiMind Digital Legal Assistant</p>
+    </footer>
+
+    <script>
+        async function generateClaim() {
+            const issue = document.getElementById('user-issue').value.trim();
+            if (issue.length < 10) {
+                alert('Пожалуйста, опишите ситуацию подробнее (минимум 10 символов)');
+                return;
+            }
+
+            const btn = document.getElementById('submit-btn');
+            const loader = document.getElementById('loader');
+            const resultContainer = document.getElementById('result-container');
+            const resultArea = document.getElementById('result-area');
+
+            // Состояние UI
+            btn.disabled = true;
+            btn.style.opacity = '0.5';
+            loader.classList.remove('hidden');
+            resultContainer.classList.add('hidden');
+
+            // Промпт для юридической точности
+            const fullPrompt = `Ты — опытный юрист. Напиши грамотную досудебную претензию по следующей жалобе: "${issue}". 
+            Обязательно используй статьи Закона о защите прав потребителей РФ. Структура: 
+            1. Кому (заголовки оставь пустыми для заполнения). 
+            2. Описание ситуации. 
+            3. Правовое обоснование. 
+            4. Требование (возврат денег, обмен, неустойка). 
+            5. Срок ответа. 
+            Тон официальный.`;
+
+            try {
+                // Запрос к вашему PHP-прокси
+                const response = await fetch('api.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt: fullPrompt })
+                });
+
+                if (!response.ok) throw new Error('Ошибка сервера');
+
+                const data = await response.json();
+                
+                // Извлекаем текст (адаптируйте под ответ вашего API)
+                let aiText = "Ошибка формата данных.";
+                if (data.answer) {
+                    aiText = data.answer;
+                } else if (data.request && data.request.messages) {
+                    aiText = data.request.messages[0].content;
+                }
+
+                resultArea.innerText = aiText;
+                resultContainer.classList.remove('hidden');
+                
+                // Плавная прокрутка к результату
+                resultContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+            } catch (error) {
+                console.error(error);
+                alert('Ошибка соединения. Убедитесь, что api.php загружен на сервер.');
+            } finally {
+                btn.disabled = false;
+                btn.style.opacity = '1';
+                loader.classList.add('hidden');
+            }
+        }
+
+        function copyText() {
+            const text = document.getElementById('result-area').innerText;
+            navigator.clipboard.writeText(text).then(() => {
+                const btn = event.currentTarget;
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '<span class="material-icons text-sm mr-2">done</span> Скопировано!';
+                setTimeout(() => btn.innerHTML = originalText, 2000);
+            });
+        }
+    </script>
+</body>
+</html>
